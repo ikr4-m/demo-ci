@@ -1,0 +1,97 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: the-app
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: the-app
+  namespace: the-app
+  labels:
+    app.kubernetes.io/component: the-app
+    app.kubernetes.io/name: the-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: the-app
+      app.kubernetes.io/name: the-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: the-app
+        app.kubernetes.io/name: the-app
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/ikr4-m/demo-ci:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources: {}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 2
+            timeoutSeconds: 1
+            periodSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - '-c'
+                  - sleep 10
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: the-app
+  namespace: the-app
+spec:
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/component: the-app
+    app.kubernetes.io/name: the-app
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: the-app-ingress
+  namespace: the-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: zeetech-demo.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: the-app
+                port:
+                  number: 8080
