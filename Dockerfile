@@ -8,6 +8,6 @@ COPY . .
 RUN go build -C . -ldflags "-w -s -linkmode external -extldflags -static" -o app;
 
 
-FROM scratch
+FROM docker.io/library/alpine:latest
 COPY --from=backend /build/app /app
 CMD ["/app"]
