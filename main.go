@@ -17,7 +17,7 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(
 			http.StatusOK,
-			fmt.Sprintf("Hello world from %s revision!", versionNumber),
+			fmt.Sprintf("Hello world, this is %s rev!", versionNumber),
 		)
 	})
 
